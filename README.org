@@ -1,0 +1,167 @@
+#+TITLE: Pymultihash usage
+#+OPTIONS: ^:nil
+#+PROPERTY: header-args:sh :session *shell pymultihash-usage sh* :results silent raw
+#+PROPERTY: header-args:python :session *shell pymultihash-usage python* :results silent raw
+
+** System environment
+
+- Debian 9.11
+
+- Python 3.7.0
+
+Python modules:
+
+- pymultihash-0.8.2
+
+** Imports
+
+#+BEGIN_SRC python
+import multihash
+import hashlib
+import binascii
+#+END_SRC
+
+** Basic usage
+*** Decoding
+
+#+BEGIN_SRC python
+mhash = b'EiAsJrRraP/Gj/mbRTwdMEE0E0ItcGSDv6D5il6IYmbnrg=='
+data = b'foo'
+#+END_SRC
+
+#+BEGIN_SRC python :results replace code
+mh = multihash.decode(mhash, 'base64')
+mh.verify(data), mh
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+(True, Multihash(func=<Func.sha2_256: 18>, digest=b',&\xb4kh\xff\xc6\x8f\xf9\x9bE<\x1d0A4\x13B-pd\x83\xbf\xa0\xf9\x8a^\x88bf\xe7\xae'))
+#+end_src
+
+#+BEGIN_SRC python :results replace code
+hex(mh.func.value), len(mh.digest)
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+('0x12', 32)
+#+end_src
+
+#+BEGIN_SRC python :results replace code
+mh_trunc = mh.truncate(16)
+mh_trunc.verify(data), mh_trunc
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+(True, Multihash(func=<Func.sha2_256: 18>, digest=b',&\xb4kh\xff\xc6\x8f\xf9\x9bE<\x1d0A4'))
+#+end_src
+
+*** Encoding
+
+#+BEGIN_SRC python
+data = b'foo'
+#+END_SRC
+
+#+BEGIN_SRC python :results replace code
+mh = multihash.Multihash(multihash.Func.sha2_512, data)
+mh
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+Multihash(sha2_512, b64:Zm9v)
+#+end_src
+
+#+BEGIN_SRC python
+mh = multihash.digest(data, 'sha1')
+mh
+#+END_SRC
+
+#+BEGIN_SRC python :results replace code
+mh.encode('base64')
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+b'ERQL7se16j8P28ldDdR/PFvCddqKMw=='
+#+end_src
+
+** The hash function registry
+
+#+BEGIN_SRC python :results replace code
+multihash.Multihash(0x05, hashlib.md5(data).digest())
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+Multihash(0x5, b64:rL0Y20zC+Fzt72VPzMSk2A==)
+#+end_src
+
+#+BEGIN_SRC python :results replace code
+multihash.FuncReg.register(0x05, 'md-5', 'md5', hashlib.md5)
+multihash.digest(data, 'md-5')
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+Multihash(0x5, b64:rL0Y20zC+Fzt72VPzMSk2A==)
+#+end_src
+
+#+BEGIN_SRC python
+multihash.FuncReg.unregister(0x05)
+#+END_SRC
+
+** The codec registry
+
+#+BEGIN_SRC python
+multihash.CodecReg.register('uu', binascii.b2a_uu, binascii.a2b_uu)
+#+END_SRC
+
+#+BEGIN_SRC python :results replace code
+mhash = b'6$10+[L>UZC\\/V\\E=#=1_/%O"==J*,P  \n'
+mh = multihash.decode(mhash, 'uu')
+mh.encode('uu') == mhash, mh
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+(True, Multihash(func=<Func.sha1: 17>, digest=b'\x0b\xee\xc7\xb5\xea?\x0f\xdb\xc9]\r\xd4\x7f<[\xc2u\xda\x8a3'))
+#+end_src
+
+#+BEGIN_SRC python
+multihash.CodecReg.unregister('uu')
+#+END_SRC
+
+** API
+*** Hash functions
+
+#+BEGIN_SRC python :results replace code
+'\n'.join(dir(multihash.Func))
+#+END_SRC
+
+#+RESULTS:
+#+begin_src python
+__class__
+__doc__
+__members__
+__module__
+blake2b
+blake2s
+sha1
+sha2_256
+sha2_512
+sha3_224
+sha3_256
+sha3_384
+sha3_512
+shake_128
+shake_256
+#+end_src
+
+*** Codecs
+
+** References
+
+- https://pymultihash.readthedocs.io/en/latest/
